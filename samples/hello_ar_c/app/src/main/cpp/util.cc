@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "util.h"
+#include "Util.h"
 
 #include <unistd.h>
 #include <sstream>
 #include <string>
 
-#include "jni_interface.h"
+#include "JniInterface.h"
 
-namespace hello_ar {
-namespace util {
+namespace Ray {
+namespace Util {
 
 void CheckGlError(const char* operation) {
   bool anyError = false;
@@ -67,7 +67,7 @@ static GLuint LoadShader(GLenum shader_type, const char* shader_source) {
     }
 
     glGetShaderInfoLog(shader, info_len, nullptr, buf);
-    LOGE("hello_ar::util::Could not compile shader %d:\n%s\n", shader_type,
+    LOGE("Ray::Util::Could not compile shader %d:\n%s\n", shader_type,
          buf);
     free(buf);
     glDeleteShader(shader);
@@ -77,34 +77,34 @@ static GLuint LoadShader(GLenum shader_type, const char* shader_source) {
   return shader;
 }
 
-GLuint CreateProgram(const char* vertex_shader_file_name,
-                     const char* fragment_shader_file_name,
-                     AAssetManager* asset_manager) {
+GLuint CreateProgram(const char* vertexShaderFileName,
+                     const char* fragmentShaderFileName,
+                     AAssetManager* assetManager) {
   std::map<std::string, int> empty_define;
-  return CreateProgram(vertex_shader_file_name, fragment_shader_file_name,
-                       asset_manager, empty_define);
+  return CreateProgram(vertexShaderFileName, fragmentShaderFileName,
+                       assetManager, empty_define);
 }
-GLuint CreateProgram(const char* vertex_shader_file_name,
-                     const char* fragment_shader_file_name,
-                     AAssetManager* asset_manager,
-                     const std::map<std::string, int>& define_values_map) {
+GLuint CreateProgram(const char* vertexShaderFileName,
+                     const char* fragmentShaderFileName,
+                     AAssetManager* assetManager,
+                     const std::map<std::string, int>& defineValuesMap) {
   std::string vertexShaderContent;
-  if (!LoadTextFileFromAssetManager(vertex_shader_file_name, asset_manager,
+  if (!LoadTextFileFromAssetManager(vertexShaderFileName, assetManager,
                                     &vertexShaderContent)) {
-    LOGE("Failed to load file: %s", vertex_shader_file_name);
+    LOGE("Failed to load file: %s", vertexShaderFileName);
     return 0;
   }
 
   std::string fragmentShaderContent;
-  if (!LoadTextFileFromAssetManager(fragment_shader_file_name, asset_manager,
+  if (!LoadTextFileFromAssetManager(fragmentShaderFileName, assetManager,
                                     &fragmentShaderContent)) {
-    LOGE("Failed to load file: %s", fragment_shader_file_name);
+    LOGE("Failed to load file: %s", fragmentShaderFileName);
     return 0;
   }
 
   // Prepend any #define values specified during this run.
   std::stringstream defines;
-  for (const auto& entry : define_values_map) {
+  for (const auto& entry : defineValuesMap) {
     defines << "#define " << entry.first << " " << entry.second << "\n";
   }
   fragmentShaderContent = defines.str() + fragmentShaderContent;
@@ -126,9 +126,9 @@ GLuint CreateProgram(const char* vertex_shader_file_name,
   GLuint program = glCreateProgram();
   if (program) {
     glAttachShader(program, vertexShader);
-    CheckGlError("hello_ar::util::glAttachShader");
+    CheckGlError("Ray::Util::glAttachShader");
     glAttachShader(program, fragment_shader);
-    CheckGlError("hello_ar::util::glAttachShader");
+    CheckGlError("Ray::Util::glAttachShader");
     glLinkProgram(program);
     GLint link_status = GL_FALSE;
     glGetProgramiv(program, GL_LINK_STATUS, &link_status);
@@ -139,7 +139,7 @@ GLuint CreateProgram(const char* vertex_shader_file_name,
         char* buf = reinterpret_cast<char*>(malloc(buf_length));
         if (buf) {
           glGetProgramInfoLog(program, buf_length, nullptr, buf);
-          LOGE("hello_ar::util::Could not link program:\n%s\n", buf);
+          LOGE("Ray::Util::Could not link program:\n%s\n", buf);
           free(buf);
         }
       }
@@ -150,25 +150,25 @@ GLuint CreateProgram(const char* vertex_shader_file_name,
   return program;
 }
 
-bool LoadTextFileFromAssetManager(const char* file_name,
-                                  AAssetManager* asset_manager,
-                                  std::string* out_file_text_string) {
+bool LoadTextFileFromAssetManager(const char* fileName,
+                                  AAssetManager* assetManager,
+                                  std::string* outFileTextString) {
   // If the file hasn't been uncompressed, load it to the internal storage.
   // Note that AAsset_openFileDescriptor doesn't support compressed
   // files (.obj).
   AAsset* asset =
-      AAssetManager_open(asset_manager, file_name, AASSET_MODE_STREAMING);
+      AAssetManager_open(assetManager, fileName, AASSET_MODE_STREAMING);
   if (asset == nullptr) {
-    LOGE("Error opening asset %s", file_name);
+    LOGE("Error opening asset %s", fileName);
     return false;
   }
 
   off_t file_size = AAsset_getLength(asset);
-  out_file_text_string->resize(file_size);
-  int ret = AAsset_read(asset, &out_file_text_string->front(), file_size);
+  outFileTextString->resize(file_size);
+  int ret = AAsset_read(asset, &outFileTextString->front(), file_size);
 
   if (ret <= 0) {
-    LOGE("Failed to open file: %s", file_name);
+    LOGE("Failed to open file: %s", fileName);
     AAsset_close(asset);
     return false;
   }
@@ -188,25 +188,23 @@ bool LoadPngFromAssetManager(int target, const char* path) {
     jmethodID load_image_method;
     jmethodID load_texture_method;
   } jniIds = [env]() -> JNIData {
-    constexpr char kHelperClassName[] =
-        "com/google/ar/core/examples/c/helloar/JniInterface";
+    constexpr char kHelperClassName[] = "com/google/ar/core/examples/c/helloar/JniInterface";
     constexpr char kLoadImageMethodName[] = "loadImage";
-    constexpr char kLoadImageMethodSignature[] =
-        "(Ljava/lang/String;)Landroid/graphics/Bitmap;";
+    constexpr char kLoadImageMethodSignature[] = "(Ljava/lang/String;)Landroid/graphics/Bitmap;";
     constexpr char kLoadTextureMethodName[] = "loadTexture";
-    constexpr char kLoadTextureMethodSignature[] =
-        "(ILandroid/graphics/Bitmap;)V";
+    constexpr char kLoadTextureMethodSignature[] = "(ILandroid/graphics/Bitmap;)V";
     jclass helper_class = FindClass(kHelperClassName);
     if (helper_class) {
       helper_class = static_cast<jclass>(env->NewGlobalRef(helper_class));
-      jmethodID load_image_method = env->GetStaticMethodID(
-          helper_class, kLoadImageMethodName, kLoadImageMethodSignature);
-      jmethodID load_texture_method = env->GetStaticMethodID(
-          helper_class, kLoadTextureMethodName, kLoadTextureMethodSignature);
-      return {helper_class, load_image_method, load_texture_method};
+      jmethodID load_image_method = env->GetStaticMethodID(helper_class,
+                                                           kLoadImageMethodName,
+                                                           kLoadImageMethodSignature);
+      jmethodID load_texture_method = env->GetStaticMethodID(helper_class,
+                                                             kLoadTextureMethodName,
+                                                             kLoadTextureMethodSignature);
+      return { helper_class, load_image_method, load_texture_method };
     }
-    LOGE("hello_ar::util::Could not find Java helper class %s",
-         kHelperClassName);
+    LOGE("Ray::Util::Could not find Java helper class %s", kHelperClassName);
     return {};
   }();
 
@@ -228,11 +226,11 @@ bool LoadPngFromAssetManager(int target, const char* path) {
   return true;
 }
 
-bool LoadObjFile(const std::string& file_name, AAssetManager* asset_manager,
-                 std::vector<GLfloat>* out_vertices,
-                 std::vector<GLfloat>* out_normals,
-                 std::vector<GLfloat>* out_uv,
-                 std::vector<GLushort>* out_indices) {
+bool LoadObjFile(const std::string& fileName, AAssetManager* assetManager,
+                 std::vector<GLfloat>* outVertices,
+                 std::vector<GLfloat>* outNormals,
+                 std::vector<GLfloat>* outUVs,
+                 std::vector<GLushort>* outIndices) {
   std::vector<GLfloat> temp_positions;
   std::vector<GLfloat> temp_normals;
   std::vector<GLfloat> temp_uvs;
@@ -241,8 +239,8 @@ bool LoadObjFile(const std::string& file_name, AAssetManager* asset_manager,
   std::vector<GLushort> uv_indices;
 
   std::string file_buffer;
-  bool read_success = LoadTextFileFromAssetManager(file_name.c_str(),
-                                                   asset_manager, &file_buffer);
+  bool read_success = LoadTextFileFromAssetManager(fileName.c_str(),
+                                                   assetManager, &file_buffer);
   if (!read_success) {
     return false;
   }
@@ -393,57 +391,57 @@ bool LoadObjFile(const std::string& file_name, AAssetManager* asset_manager,
 
   for (unsigned int i = 0; i < vertex_indices.size(); i++) {
     unsigned int vertex_index = vertex_indices[i];
-    out_vertices->push_back(temp_positions[vertex_index * 3]);
-    out_vertices->push_back(temp_positions[vertex_index * 3 + 1]);
-    out_vertices->push_back(temp_positions[vertex_index * 3 + 2]);
-    out_indices->push_back(i);
+    outVertices->push_back(temp_positions[vertex_index * 3]);
+    outVertices->push_back(temp_positions[vertex_index * 3 + 1]);
+    outVertices->push_back(temp_positions[vertex_index * 3 + 2]);
+    outIndices->push_back(i);
 
     if (is_normal_available) {
       unsigned int normal_index = normal_indices[i];
-      out_normals->push_back(temp_normals[normal_index * 3]);
-      out_normals->push_back(temp_normals[normal_index * 3 + 1]);
-      out_normals->push_back(temp_normals[normal_index * 3 + 2]);
+      outNormals->push_back(temp_normals[normal_index * 3]);
+      outNormals->push_back(temp_normals[normal_index * 3 + 1]);
+      outNormals->push_back(temp_normals[normal_index * 3 + 2]);
     }
 
     if (is_uv_available) {
       unsigned int uv_index = uv_indices[i];
-      out_uv->push_back(temp_uvs[uv_index * 2]);
-      out_uv->push_back(temp_uvs[uv_index * 2 + 1]);
+      outUVs->push_back(temp_uvs[uv_index * 2]);
+      outUVs->push_back(temp_uvs[uv_index * 2 + 1]);
     }
   }
 
   return true;
 }
 
-void Log4x4Matrix(const float raw_matrix[16]) {
+void Log4x4Matrix(const float rawMatrix[16]) {
   LOGI(
       "%f, %f, %f, %f\n"
       "%f, %f, %f, %f\n"
       "%f, %f, %f, %f\n"
       "%f, %f, %f, %f\n",
-      raw_matrix[0], raw_matrix[1], raw_matrix[2], raw_matrix[3], raw_matrix[4],
-      raw_matrix[5], raw_matrix[6], raw_matrix[7], raw_matrix[8], raw_matrix[9],
-      raw_matrix[10], raw_matrix[11], raw_matrix[12], raw_matrix[13],
-      raw_matrix[14], raw_matrix[15]);
+      rawMatrix[0], rawMatrix[1], rawMatrix[2], rawMatrix[3], rawMatrix[4],
+      rawMatrix[5], rawMatrix[6], rawMatrix[7], rawMatrix[8], rawMatrix[9],
+      rawMatrix[10], rawMatrix[11], rawMatrix[12], rawMatrix[13],
+      rawMatrix[14], rawMatrix[15]);
 }
 
-void GetTransformMatrixFromAnchor(const ArAnchor& ar_anchor,
-                                  ArSession* ar_session,
-                                  glm::mat4* out_model_mat) {
-  if (out_model_mat == nullptr) {
-    LOGE("util::GetTransformMatrixFromAnchor model_mat is null.");
+void GetTransformMatrixFromAnchor(const ArAnchor& arAnchor,
+                                  ArSession* arSession,
+                                  glm::mat4* outModelMat) {
+  if (outModelMat == nullptr) {
+    LOGE("Util::GetTransformMatrixFromAnchor model_mat is null.");
     return;
   }
-  util::ScopedArPose pose(ar_session);
-  ArAnchor_getPose(ar_session, &ar_anchor, pose.GetArPose());
-  ArPose_getMatrix(ar_session, pose.GetArPose(),
-                   glm::value_ptr(*out_model_mat));
+  Util::ScopedArPose pose(arSession);
+  ArAnchor_getPose(arSession, &arAnchor, pose.GetArPose());
+  ArPose_getMatrix(arSession, pose.GetArPose(),
+                   glm::value_ptr(*outModelMat));
 }
 
-glm::vec3 GetPlaneNormal(const ArSession& ar_session,
-                         const ArPose& plane_pose) {
+glm::vec3 GetPlaneNormal(const ArSession& arSession,
+                         const ArPose& planePose) {
   float plane_pose_raw[7] = {0.f};
-  ArPose_getPoseRaw(&ar_session, &plane_pose, plane_pose_raw);
+  ArPose_getPoseRaw(&arSession, &planePose, plane_pose_raw);
   glm::quat plane_quaternion(plane_pose_raw[3], plane_pose_raw[0],
                              plane_pose_raw[1], plane_pose_raw[2]);
   // Get normal vector, normal is defined to be positive Y-position in local
@@ -451,22 +449,22 @@ glm::vec3 GetPlaneNormal(const ArSession& ar_session,
   return glm::rotate(plane_quaternion, glm::vec3(0., 1.f, 0.));
 }
 
-float CalculateDistanceToPlane(const ArSession& ar_session,
-                               const ArPose& plane_pose,
-                               const ArPose& camera_pose) {
+float CalculateDistanceToPlane(const ArSession& arSession,
+                               const ArPose& planePose,
+                               const ArPose& cameraPose) {
   float plane_pose_raw[7] = {0.f};
-  ArPose_getPoseRaw(&ar_session, &plane_pose, plane_pose_raw);
+  ArPose_getPoseRaw(&arSession, &planePose, plane_pose_raw);
   glm::vec3 plane_position(plane_pose_raw[4], plane_pose_raw[5],
                            plane_pose_raw[6]);
-  glm::vec3 normal = GetPlaneNormal(ar_session, plane_pose);
+  glm::vec3 normal = GetPlaneNormal(arSession, planePose);
 
   float camera_pose_raw[7] = {0.f};
-  ArPose_getPoseRaw(&ar_session, &camera_pose, camera_pose_raw);
+  ArPose_getPoseRaw(&arSession, &cameraPose, camera_pose_raw);
   glm::vec3 camera_P_plane(camera_pose_raw[4] - plane_position.x,
                            camera_pose_raw[5] - plane_position.y,
                            camera_pose_raw[6] - plane_position.z);
   return glm::dot(normal, camera_P_plane);
 }
 
-}  // namespace util
-}  // namespace hello_ar
+}  // namespace Util
+}  // namespace Ray

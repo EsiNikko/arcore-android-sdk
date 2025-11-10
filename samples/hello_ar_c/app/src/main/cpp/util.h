@@ -1,21 +1,4 @@
-/*
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-#ifndef C_ARCORE_HELLOE_AR_UTIL_H_
-#define C_ARCORE_HELLOE_AR_UTIL_H_
+#pragma once
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -34,140 +17,143 @@
 
 #ifndef LOGI
 #define LOGI(...) \
-  __android_log_print(ANDROID_LOG_INFO, "hello_ar_example_c", __VA_ARGS__)
+    __android_log_print(ANDROID_LOG_INFO, "RayAR_C++", __VA_ARGS__)
 #endif  // LOGI
 
 #ifndef LOGE
 #define LOGE(...) \
-  __android_log_print(ANDROID_LOG_ERROR, "hello_ar_example_c", __VA_ARGS__)
+    __android_log_print(ANDROID_LOG_ERROR, "RayAR_C++", __VA_ARGS__)
 #endif  // LOGE
 
 #ifndef CHECK
-#define CHECK(condition)                                                   \
-  if (!(condition)) {                                                      \
-    LOGE("*** CHECK FAILED at %s:%d: %s", __FILE__, __LINE__, #condition); \
-    abort();                                                               \
-  }
+#define CHECK(condition)                                                        \
+    if (!(condition)) {                                                         \
+        LOGE("*** CHECK FAILED at %s:%d: %s", __FILE__, __LINE__, #condition);  \
+        abort();                                                                \
+    }
 #endif  // CHECK
 
-#ifndef CHECKANDTHROW
-#define CHECKANDTHROW(condition, env, msg, ...)                            \
-  if (!(condition)) {                                                      \
-    LOGE("*** CHECK FAILED at %s:%d: %s", __FILE__, __LINE__, #condition); \
-    util::ThrowJavaException(env, msg);                                    \
-    return ##__VA_ARGS__;                                                  \
-  }
-#endif  // CHECKANDTHROW
+#ifndef CHECK_AND_THROW
+#define CHECK_AND_THROW(condition, env, msg, ...)                               \
+    if (!(condition))                                                           \
+    {                                                                           \
+        LOGE("*** CHECK FAILED at %s:%d: %s", __FILE__, __LINE__, #condition);  \
+        Util::ThrowJavaException(env, msg);                                     \
+        return ##__VA_ARGS__;                                                   \
+    }                                                                           \
+    do{}while(false)
+#endif  // CHECK_AND_THROW
 
-namespace hello_ar {
+namespace Ray
+{
+    // Utilities for C hello AR project.
+    namespace Util
+    {
+        // Provides a scoped allocated instance of Anchor.
+        // Can be treated as an ArAnchor*.
+        class ScopedArPose
+        {
+        public:
+            explicit ScopedArPose(const ArSession* session)
+            {
+                ArPose_create(session, nullptr, &m_pose);
+            }
+            ~ScopedArPose() { ArPose_destroy(m_pose); }
+            ArPose* GetArPose() { return m_pose; }
+            // Delete copy constructors.
+            ScopedArPose(const ScopedArPose&) = delete;
+            void operator=(const ScopedArPose&) = delete;
 
-// Utilities for C hello AR project.
-namespace util {
+        private:
+            ArPose* m_pose = nullptr;
+        };
 
-// Provides a scoped allocated instance of Anchor.
-// Can be treated as an ArAnchor*.
-class ScopedArPose {
- public:
-  explicit ScopedArPose(const ArSession* session) {
-    ArPose_create(session, nullptr, &pose_);
-  }
-  ~ScopedArPose() { ArPose_destroy(pose_); }
-  ArPose* GetArPose() { return pose_; }
-  // Delete copy constructors.
-  ScopedArPose(const ScopedArPose&) = delete;
-  void operator=(const ScopedArPose&) = delete;
+        // Check GL error, and abort if an error is encountered.
+        //
+        // @param operation, the name of the GL function call.
+        void CheckGlError(const char* operation);
 
- private:
-  ArPose* pose_;
-};
+        // Throw a Java exception.
+        //
+        // @param env, the JNIEnv.
+        // @param msg, the message of this exception.
+        void ThrowJavaException(JNIEnv* env, const char* msg);
 
-// Check GL error, and abort if an error is encountered.
-//
-// @param operation, the name of the GL function call.
-void CheckGlError(const char* operation);
+        // Create a shader program ID.
+        //
+        // @param assetManager, AAssetManager pointer.
+        // @param vertexShaderFileName, the vertex shader source file.
+        // @param fragmentShaderFileName, the fragment shader source file.
+        // @return a non-zero value if the shader is created successfully, otherwise 0.
+        GLuint CreateProgram(const char* vertexShaderFileName,
+                             const char* fragmentShaderFileName,
+                             AAssetManager* assetManager);
 
-// Throw a Java exception.
-//
-// @param env, the JNIEnv.
-// @param msg, the message of this exception.
-void ThrowJavaException(JNIEnv* env, const char* msg);
+        // Create a shader program ID.
+        //
+        // @param assetManager, AAssetManager pointer.
+        // @param vertexShaderFileName, the vertex shader source file.
+        // @param fragmentShaderFileName, the fragment shader source file.
+        // @param defineValuesMap The #define values to add to the top of the shader
+        // source code.
+        // @return a non-zero value if the shader is created successfully, otherwise 0.
+        GLuint CreateProgram(const char* vertexShaderFileName,
+                             const char* fragmentShaderFileName,
+                             AAssetManager* assetManager,
+                             const std::map<std::string, int>& defineValuesMap);
 
-// Create a shader program ID.
-//
-// @param asset_manager, AAssetManager pointer.
-// @param vertex_shader_file_name, the vertex shader source file.
-// @param fragment_shader_file_name, the fragment shader source file.
-// @return a non-zero value if the shader is created successfully, otherwise 0.
-GLuint CreateProgram(const char* vertex_shader_file_name,
-                     const char* fragment_shader_file_name,
-                     AAssetManager* asset_manager);
+        // Load a text file from assets folder.
+        //
+        // @param assetManager, AAssetManager pointer.
+        // @param fileName, path to the file, relative to the assets folder.
+        // @param out_string, output string.
+        // @return true if the file is loaded correctly, otherwise false.
+        bool LoadTextFileFromAssetManager(const char* fileName,
+                                          AAssetManager* assetManager,
+                                          std::string* outFileTextString);
 
-// Create a shader program ID.
-//
-// @param asset_manager, AAssetManager pointer.
-// @param vertex_shader_file_name, the vertex shader source file.
-// @param fragment_shader_file_name, the fragment shader source file.
-// @param define_values_map The #define values to add to the top of the shader
-// source code.
-// @return a non-zero value if the shader is created successfully, otherwise 0.
-GLuint CreateProgram(const char* vertex_shader_file_name,
-                     const char* fragment_shader_file_name,
-                     AAssetManager* asset_manager,
-                     const std::map<std::string, int>& define_values_map);
+        // Load png file from assets folder and then assign it to the OpenGL target.
+        // This method must be called from the renderer thread since it will result in
+        // OpenGL calls to assign the image to the texture target.
+        //
+        // @param target, openGL texture target to load the image into.
+        // @param path, path to the file, relative to the assets folder.
+        // @return true if png is loaded correctly, otherwise false.
+        bool LoadPngFromAssetManager(int target, const char* path);
 
-// Load a text file from assets folder.
-//
-// @param asset_manager, AAssetManager pointer.
-// @param file_name, path to the file, relative to the assets folder.
-// @param out_string, output string.
-// @return true if the file is loaded correctly, otherwise false.
-bool LoadTextFileFromAssetManager(const char* file_name,
-                                  AAssetManager* asset_manager,
-                                  std::string* out_file_text_string);
+        // Load obj file from assets folder from the app.
+        //
+        // @param assetManager, AAssetManager pointer.
+        // @param fileName, name of the obj file.
+        // @param outVertices, output vertices.
+        // @param outNormals, output normals.
+        // @param outUVs, output texture UV coordinates.
+        // @param outIndices, output triangle indices.
+        // @return true if obj is loaded correctly, otherwise false.
+        bool LoadObjFile(const std::string& fileName,
+                         AAssetManager* assetManager,
+                         std::vector<GLfloat>* outVertices,
+                         std::vector<GLfloat>* outNormals,
+                         std::vector<GLfloat>* outUVs,
+                         std::vector<GLushort>* outIndices);
 
-// Load png file from assets folder and then assign it to the OpenGL target.
-// This method must be called from the renderer thread since it will result in
-// OpenGL calls to assign the image to the texture target.
-//
-// @param target, openGL texture target to load the image into.
-// @param path, path to the file, relative to the assets folder.
-// @return true if png is loaded correctly, otherwise false.
-bool LoadPngFromAssetManager(int target, const char* path);
+        // Format and output the matrix to logcat file.
+        // Note that this function output matrix in row major.
+        void Log4x4Matrix(const float rawMatrix[16]);
 
-// Load obj file from assets folder from the app.
-//
-// @param asset_manager, AAssetManager pointer.
-// @param file_name, name of the obj file.
-// @param out_vertices, output vertices.
-// @param out_normals, output normals.
-// @param out_uv, output texture UV coordinates.
-// @param out_indices, output triangle indices.
-// @return true if obj is loaded correctly, otherwise false.
-bool LoadObjFile(const std::string& file_name, AAssetManager* asset_manager,
-                 std::vector<GLfloat>* out_vertices,
-                 std::vector<GLfloat>* out_normals,
-                 std::vector<GLfloat>* out_uv,
-                 std::vector<GLushort>* out_indices);
+        // Get transformation matrix from ArAnchor.
+        void GetTransformMatrixFromAnchor(const ArAnchor& arAnchor,
+                                          ArSession* arSession,
+                                          glm::mat4* outModelMat);
 
-// Format and output the matrix to logcat file.
-// Note that this function output matrix in row major.
-void Log4x4Matrix(const float raw_matrix[16]);
+        // Get the plane's normal from center pose.
+        glm::vec3 GetPlaneNormal(const ArSession& arSession, const ArPose& planePose);
 
-// Get transformation matrix from ArAnchor.
-void GetTransformMatrixFromAnchor(const ArAnchor& ar_anchor,
-                                  ArSession* ar_session,
-                                  glm::mat4* out_model_mat);
-
-// Get the plane's normal from center pose.
-glm::vec3 GetPlaneNormal(const ArSession& ar_session, const ArPose& plane_pose);
-
-// Calculate the normal distance to plane from cameraPose, the given planePose
-// should have y axis parallel to plane's normal, for example plane's center
-// pose or hit test pose.
-float CalculateDistanceToPlane(const ArSession& ar_session,
-                               const ArPose& plane_pose,
-                               const ArPose& camera_pose);
-}  // namespace util
-}  // namespace hello_ar
-
-#endif  // C_ARCORE_HELLOE_AR_UTIL_H_
+        // Calculate the normal distance to plane from cameraPose, the given planePose
+        // should have y axis parallel to plane's normal, for example plane's center
+        // pose or hit test pose.
+        float CalculateDistanceToPlane(const ArSession& arSession,
+                                       const ArPose& planePose,
+                                       const ArPose& cameraPose);
+    }  // namespace Util
+}  // namespace Ray

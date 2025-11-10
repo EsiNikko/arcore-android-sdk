@@ -18,7 +18,7 @@
 #include <android/asset_manager_jni.h>
 #include <jni.h>
 
-#include "hello_ar_application.h"
+#include "RayArApplication.h"
 
 #define JNI_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
@@ -30,12 +30,12 @@ namespace {
 // maintain a reference to the JVM so we can use it later.
 static JavaVM *g_vm = nullptr;
 
-inline jlong jptr(hello_ar::HelloArApplication *native_hello_ar_application) {
+inline jlong jptr(Ray::RayArApplication *native_hello_ar_application) {
   return reinterpret_cast<intptr_t>(native_hello_ar_application);
 }
 
-inline hello_ar::HelloArApplication *native(jlong ptr) {
-  return reinterpret_cast<hello_ar::HelloArApplication *>(ptr);
+inline Ray::RayArApplication *native(jlong ptr) {
+  return reinterpret_cast<Ray::RayArApplication *>(ptr);
 }
 
 }  // namespace
@@ -48,7 +48,7 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
 JNI_METHOD(jlong, createNativeApplication)
 (JNIEnv *env, jclass, jobject j_asset_manager) {
   AAssetManager *asset_manager = AAssetManager_fromJava(env, j_asset_manager);
-  return jptr(new hello_ar::HelloArApplication(asset_manager));
+  return jptr(new Ray::RayArApplication(asset_manager));
 }
 
 JNI_METHOD(jboolean, isDepthSupported)

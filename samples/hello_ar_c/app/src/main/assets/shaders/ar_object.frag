@@ -1,19 +1,3 @@
-/*
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 precision mediump float;
 
 uniform sampler2D u_Texture;
@@ -52,8 +36,7 @@ float DepthInverseLerp(in float value, in float min_bound, in float max_bound) {
 // Returns a value between 0.0 (not visible) and 1.0 (completely visible)
 // Which represents how visible or occluded is the pixel in relation to the
 // depth map.
-float DepthGetVisibility(in sampler2D depth_texture, in vec2 depth_uv,
-                         in float asset_depth_mm) {
+float DepthGetVisibility(in sampler2D depth_texture, in vec2 depth_uv, in float asset_depth_mm) {
   float depth_mm = DepthGetMillimeters(depth_texture, depth_uv);
 
   // Instead of a hard z-buffer test, allow the asset to fade into the
@@ -79,8 +62,7 @@ float DepthGetVisibility(in sampler2D depth_texture, in vec2 depth_uv,
   return visibility;
 }
 
-float DepthGetBlurredVisibilityAroundUV(in sampler2D depth_texture, in vec2 uv,
-                                        in float asset_depth_mm) {
+float DepthGetBlurredVisibilityAroundUV(in sampler2D depth_texture, in vec2 uv, in float asset_depth_mm) {
   // Kernel used:
   // 0   4   7   4   0
   // 4   16  26  16  4
@@ -91,8 +73,7 @@ float DepthGetBlurredVisibilityAroundUV(in sampler2D depth_texture, in vec2 uv,
   float sum = 0.0;
 
   const float kOcclusionBlurAmount = 0.01;
-  vec2 blurriness = vec2(kOcclusionBlurAmount,
-                         kOcclusionBlurAmount * u_DepthAspectRatio);
+  vec2 blurriness = vec2(kOcclusionBlurAmount, kOcclusionBlurAmount * u_DepthAspectRatio);
 
   float current = 0.0;
 
@@ -157,10 +138,9 @@ void main() {
     // Flip the y-texture coordinate to address the texture from top-left.
     vec4 objectColor = texture2D(u_Texture, vec2(v_TexCoord.x, 1.0 - v_TexCoord.y));
 
-    // Apply color to grayscale image only if the alpha of u_ObjColor is
+    // Apply Color to grayscale image only if the alpha of u_ObjColor is
     // greater and equal to 255.0.
-    objectColor.rgb *= mix(vec3(1.0), u_ObjColor.rgb / 255.0,
-                           step(255.0, u_ObjColor.a));
+    objectColor.rgb *= mix(vec3(1.0), u_ObjColor.rgb / 255.0, step(255.0, u_ObjColor.a));
 
     // Apply inverse SRGB gamma to the texture before making lighting calculations.
     objectColor.rgb = pow(objectColor.rgb, vec3(kInverseGamma));
@@ -169,21 +149,19 @@ void main() {
     float ambient = materialAmbient;
 
     // Approximate a hemisphere light (not a harsh directional light).
-    float diffuse = materialDiffuse *
-            0.5 * (dot(viewNormal, viewLightDirection) + 1.0);
+    float diffuse = materialDiffuse * 0.5 * (dot(viewNormal, viewLightDirection) + 1.0);
 
     // Compute specular light. Textures are loaded with with premultiplied alpha
     // (https://developer.android.com/reference/android/graphics/BitmapFactory.Options#inPremultiplied),
-    // so premultiply the specular color by alpha as well.
+    // so premultiply the specular Color by alpha as well.
     vec3 reflectedLightDirection = reflect(viewLightDirection, viewNormal);
     float specularStrength = max(0.0, dot(viewFragmentDirection, reflectedLightDirection));
-    float specular = objectColor.a * materialSpecular *
-            pow(specularStrength, materialSpecularPower);
+    float specular = objectColor.a * materialSpecular * pow(specularStrength, materialSpecularPower);
 
     vec3 color = objectColor.rgb * (ambient + diffuse) + specular;
-    // Apply SRGB gamma before writing the fragment color.
+    // Apply SRGB gamma before writing the fragment Color.
     color.rgb = pow(color, vec3(kGamma));
-    // Apply average pixel intensity and color shift
+    // Apply average pixel intensity and Color shift
     color *= colorShift * (averagePixelIntensity / kMiddleGrayGamma);
     gl_FragColor.rgb = color;
     gl_FragColor.a = objectColor.a;

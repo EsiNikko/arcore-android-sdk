@@ -20,6 +20,14 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+# Use c++_shared if you have multiple native libraries or AAR dependencies
+# Use c++_static (the NDK/CMake default) if you only have one native library
+set(ANDROID_STL "c++_shared")
+
+# (Optional but Recommended) Set the C++ language standard for modern features
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 # Import the ARCore (Google Play Services for AR) library.
 add_library(arcore SHARED IMPORTED)
 set_target_properties(arcore PROPERTIES IMPORTED_LOCATION
@@ -33,17 +41,21 @@ set_target_properties( glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${GLM_INCLUD
 
 # This is the main app library.
 add_library(hello_ar_native SHARED
-           src/main/cpp/background_renderer.cc
-           src/main/cpp/hello_ar_application.cc
-           src/main/cpp/jni_interface.cc
-           src/main/cpp/obj_renderer.cc
-           src/main/cpp/plane_renderer.cc
-           src/main/cpp/point_cloud_renderer.cc
-           src/main/cpp/texture.cc
-           src/main/cpp/util.cc)
+        src/main/cpp/Core/Timer.cc
+        src/main/cpp/Core/Log.cc
+        src/main/cpp/Asset/AssetManager.cpp
+        src/main/cpp/Renderer/Shader.cc
+        src/main/cpp/BackgroundRenderer.cc
+        src/main/cpp/RayArApplication.cc
+        src/main/cpp/JniInterface.cc
+        src/main/cpp/ObjRenderer.cc
+        src/main/cpp/PlaneRenderer.cc
+        src/main/cpp/PointCloudRenderer.cc
+        src/main/cpp/Texture.cc
+        src/main/cpp/Util.cc)
 
 target_include_directories(hello_ar_native PRIVATE
-           src/main/cpp)
+        src/main/cpp)
 target_link_libraries(hello_ar_native
                       android
                       log

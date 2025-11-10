@@ -16,6 +16,7 @@
 
 package com.google.ar.core.examples.c.helloar;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.hardware.display.DisplayManager;
@@ -38,13 +39,9 @@ import com.google.android.material.snackbar.Snackbar;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-/**
- * This is a simple example that shows how to create an augmented reality (AR) application using the
- * ARCore C API.
- */
-public class HelloArActivity extends AppCompatActivity
+public class RayArActivity extends AppCompatActivity
     implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
-  private static final String TAG = HelloArActivity.class.getSimpleName();
+  private static final String TAG = RayArActivity.class.getSimpleName();
   private static final int SNACKBAR_UPDATE_INTERVAL_MILLIS = 1000; // In milliseconds.
   private static final int NUM_DEPTH_SETTINGS_CHECKBOXES = 2;
   private static final int NUM_INSTANT_PLACEMENT_SETTINGS_CHECKBOXES = 1;
@@ -89,6 +86,7 @@ public class HelloArActivity extends AppCompatActivity
         }
       };
 
+  @SuppressLint("ClickableViewAccessibility")
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -96,29 +94,25 @@ public class HelloArActivity extends AppCompatActivity
     surfaceView = (GLSurfaceView) findViewById(R.id.surfaceview);
 
     // Set up touch listener.
-    gestureDetector =
-        new GestureDetector(
-            this,
-            new GestureDetector.SimpleOnGestureListener() {
-              @Override
-              public boolean onSingleTapUp(final MotionEvent e) {
-                // For devices that support the Depth API, shows a dialog to suggest enabling
-                // depth-based occlusion. This dialog needs to be spawned on the UI thread.
-                HelloArActivity.this.runOnUiThread(() -> showOcclusionDialogIfNeeded());
+    gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+      @Override
+      public boolean onSingleTapUp(final MotionEvent e) {
+      // For devices that support the Depth API, shows a dialog to suggest enabling
+      // depth-based occlusion. This dialog needs to be spawned on the UI thread.
+      RayArActivity.this.runOnUiThread(() -> showOcclusionDialogIfNeeded());
 
-                surfaceView.queueEvent(
-                    () -> JniInterface.onTouched(nativeApplication, e.getX(), e.getY()));
-                return true;
-              }
+      surfaceView.queueEvent(
+        () -> JniInterface.onTouched(nativeApplication, e.getX(), e.getY()));
+        return true;
+      }
 
-              @Override
-              public boolean onDown(MotionEvent e) {
-                return true;
-              }
-            });
+      @Override
+      public boolean onDown(MotionEvent e) {
+      return true;
+      }
+    });
 
-    surfaceView.setOnTouchListener(
-        (View v, MotionEvent event) -> gestureDetector.onTouchEvent(event));
+    surfaceView.setOnTouchListener((View v, MotionEvent event) -> gestureDetector.onTouchEvent(event));
 
     // Set up renderer.
     surfaceView.setPreserveEGLContextOnPause(true);
@@ -136,16 +130,15 @@ public class HelloArActivity extends AppCompatActivity
     depthSettings.onCreate(this);
     instantPlacementSettings.onCreate(this);
     ImageButton settingsButton = findViewById(R.id.settings_button);
-    settingsButton.setOnClickListener(
-        new View.OnClickListener() {
+    settingsButton.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
-            PopupMenu popup = new PopupMenu(HelloArActivity.this, v);
-            popup.setOnMenuItemClickListener(HelloArActivity.this::settingsMenuClick);
+            PopupMenu popup = new PopupMenu(RayArActivity.this, v);
+            popup.setOnMenuItemClickListener(RayArActivity.this::settingsMenuClick);
             popup.inflate(R.menu.settings_menu);
             popup.show();
           }
-        });
+    });
   }
 
   /** Menu button to launch feature specific settings. */
@@ -182,8 +175,7 @@ public class HelloArActivity extends AppCompatActivity
     }
 
     displayInSnackbar("Searching for surfaces...");
-    planeStatusCheckingHandler.postDelayed(
-        planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
+    planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
 
     // Listen to display changed events to detect 180° rotation, which does not cause a config
     // change or view resize.
@@ -283,10 +275,10 @@ public class HelloArActivity extends AppCompatActivity
   private void displayInSnackbar(String message) {
     snackbar =
         Snackbar.make(
-            HelloArActivity.this.findViewById(android.R.id.content),
+            RayArActivity.this.findViewById(android.R.id.content),
             message, Snackbar.LENGTH_INDEFINITE);
 
-    // Set the snackbar background to light transparent black color.
+    // Set the snackbar background to light transparent black Color.
     snackbar.getView().setBackgroundColor(0xbf323232);
     snackbar.show();
   }
