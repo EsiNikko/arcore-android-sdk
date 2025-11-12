@@ -50,4 +50,3 @@ namespace Ray
         bool m_uvsInitialized = false;
     };
 }  // namespace Ray
-#endif  // C_ARCORE_RAY_AR_BACKGROUND_RENDERER_H_

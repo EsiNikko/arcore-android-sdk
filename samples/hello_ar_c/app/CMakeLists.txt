@@ -1,23 +1,4 @@
-# Copyright 2017 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-##
-
-# For more information about using CMake with Android Studio, read the
-# documentation: https://d.android.com/studio/projects/add-native-code.html
-
 # Sets the minimum version of CMake required to build the native library.
-
 cmake_minimum_required(VERSION 3.4.1)
 
 # Use c++_shared if you have multiple native libraries or AAR dependencies
@@ -35,30 +16,38 @@ set_target_properties(arcore PROPERTIES IMPORTED_LOCATION
                       INTERFACE_INCLUDE_DIRECTORIES ${ARCORE_INCLUDE}
 )
 
-# Import the glm header file from the NDK.
+# Import the glm header file from the third_party libraries.
 add_library( glm INTERFACE )
 set_target_properties( glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${GLM_INCLUDE})
+# Import the stb header file from the third_party libraries.
+add_library( stb INTERFACE )
+set_target_properties( stb PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${STB_INCLUDE})
 
 # This is the main app library.
 add_library(hello_ar_native SHARED
-        src/main/cpp/Core/Timer.cc
-        src/main/cpp/Core/Log.cc
+        src/main/cpp/Core/Timer.cpp
+        src/main/cpp/Core/Log.cpp
         src/main/cpp/Asset/AssetManager.cpp
-        src/main/cpp/Renderer/Shader.cc
-        src/main/cpp/BackgroundRenderer.cc
-        src/main/cpp/RayArApplication.cc
-        src/main/cpp/JniInterface.cc
-        src/main/cpp/ObjRenderer.cc
-        src/main/cpp/PlaneRenderer.cc
-        src/main/cpp/PointCloudRenderer.cc
-        src/main/cpp/Texture.cc
-        src/main/cpp/Util.cc)
+        src/main/cpp/Renderer/Shader.cpp
+        src/main/cpp/Renderer/Texture.cpp
+        src/main/cpp/BackgroundRenderer.cpp
+        src/main/cpp/RayArApplication.cpp
+        src/main/cpp/JniInterface.cpp
+        src/main/cpp/ObjRenderer.cpp
+        src/main/cpp/PlaneRenderer.cpp
+        src/main/cpp/PointCloudRenderer.cpp
+        src/main/cpp/Texture.cpp
+        src/main/cpp/Util.cpp
+)
 
 target_include_directories(hello_ar_native PRIVATE
-        src/main/cpp)
+        src/main/cpp
+)
 target_link_libraries(hello_ar_native
-                      android
-                      log
-                      GLESv2
-                      glm
-                      arcore)
+        android
+        log
+        GLESv2
+        glm
+        stb
+        arcore
+)
