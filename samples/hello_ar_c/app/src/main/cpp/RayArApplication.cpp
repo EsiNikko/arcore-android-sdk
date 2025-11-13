@@ -23,6 +23,7 @@
 #include "arcore_c_api.h"
 #include "PlaneRenderer.h"
 #include "Util.h"
+#include "Renderer/Texture2D.h"
 
 namespace Ray
 {
@@ -119,6 +120,9 @@ namespace Ray
     void RayArApplication::OnSurfaceCreated()
     {
         LOGI("OnSurfaceCreated()");
+
+        auto texture = Texture2D::Create("models/andy.png");
+
 
         m_depthTexture.CreateOnGlThread();
         m_backgroundRenderer.InitializeGlContent(m_assetManager,

@@ -29,7 +29,7 @@ add_library(hello_ar_native SHARED
         src/main/cpp/Core/Log.cpp
         src/main/cpp/Asset/AssetManager.cpp
         src/main/cpp/Renderer/Shader.cpp
-        src/main/cpp/Renderer/Texture.cpp
+        src/main/cpp/Renderer/Texture2D.cpp
         src/main/cpp/BackgroundRenderer.cpp
         src/main/cpp/RayArApplication.cpp
         src/main/cpp/JniInterface.cpp

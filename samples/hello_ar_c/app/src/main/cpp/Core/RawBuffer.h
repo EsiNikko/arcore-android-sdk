@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Core/Core.h"
 
-namespace Helix
+namespace Ray
 {
 	// Non-owning raw buffer
 	struct RawBuffer
